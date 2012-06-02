@@ -1,0 +1,45 @@
+Command Specification for hackitup.
+
+- offsets are hex by default and lowercase. 
+- commands and values are delimited by whitespace.
+- commands will generally have only between 2-4 characters denoting them
+- ranges are given with a '-' (ex: nop 17df2-17df5)
+- string replacement is case sensitive
+- the way it goes is normally : <command> value value value value ...
+
+Example Usage:
+nop df43  (NOP byte at offset 0xDF43)
+nop 15288 dacb2 320a 448a5 (NOP bytes at 0x15288, 0xDACB2, 0x320A, and 0x448A5)
+nop 1130-113a (NOP bytes in range from 0x1130 to 0x113A)
+
+Some Examples of Commands:
+
+nop - replaces a byte value with 0x90
+
+nul - replacees a byte value with 0x00
+
+rep - replaces a byte with another byte on certain offsets.
+	Usage: repl 62 13aa2 14aa3 abc1 78042-780ac (replace bytes in offsets 0x13AA2, 0x14AA3, 0xABC1, and the range 0x78042 through 0x780AC with byte 0x62)
+
+cor - place a corrupt byte in the space (something like 0xAA for an opcode will cause any intel executable to crash. Good for debugging when tracing doesn't work).
+
+scr - scramble byte or range in the space with pseudo-cryptographic data (normally used to hide the original code or destroy it)
+
+rl - reverses the logic at a specified offset or offsets (meaning jumps have their conditions toggled).
+	
+ret - Place a return opcode (0xC3 on intel archs) in the byte(s) specified. 
+
+Raw Data Handling Commands (really experimental ideas):
+
+inc - increase the number at the byte offset(s) by 1
+dec - decrease the number at the byte offset(s) by 1
+
+incx - increase the number at the byte offset(s) by X
+decx - decrease the number at the byte offset(s) by X
+	Usage: incx a 1302 = increase the value at byte offset 0x1302 by 10 or 0xA.
+
+Note : I don't know if we want to get into multibyte values... probably at some point.
+
+xorp - xor a pattern rotation over a range of values or multiple ranges.
+		Usage: xorp 4 3a 21 15 25 125aa-127c0 369b6-7b821 (XOR the 4 bytes of 0x3A 0x21 0x15 and 0x25 over ranges 0x125AA-0x127C0 and 0x369B6-0x7B821) The key will rotate when it gets to the end.
+	
