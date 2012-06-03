@@ -10,3 +10,5 @@ diffstate_t;
 
 int generate_patch_data(char *orig_file, 
 	char *patched_file, diffstate_t **diffs);
+
+void free_patch_point(diffstate_t *diff);

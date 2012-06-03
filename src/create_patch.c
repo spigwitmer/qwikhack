@@ -76,7 +76,7 @@ int main(int argc, char **argv) {
 			fputc('\n', out_f);
 		}
 		next_iter = iter->next;
-		free(iter);
+		free_patch_point(iter);
 	}
 	fclose(out_f);
 
