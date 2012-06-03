@@ -6,16 +6,7 @@
 #include <sys/stat.h>
 #include <errno.h>
 #include "binfmt/formats.h"
-
-typedef struct diffstate_t
-{
-	unsigned char *before;
-	unsigned char *after;
-	size_t pos;
-	size_t size;
-	struct diffstate_t *next;
-}
-diffstate_t;
+#include "generate_patch_data.h"
 
 // cheesy-ass linked list setup
 static diffstate_t *create_patch_point(diffstate_t *end,
@@ -37,7 +28,7 @@ static diffstate_t *create_patch_point(diffstate_t *end,
 
 int generate_patch_data(char *orig_file, 
 	char *patched_file, 
-	char *out_file) 
+	diffstate_t **diffs) 
 {
 	struct stat st_orig, st_ptch;
 
@@ -106,24 +97,6 @@ int generate_patch_data(char *orig_file,
 		free(buf_ptch);
 	}
 	
-	// TODO: the file writing really needs to be somewhere outside the engine.
-	//  Its purpose is not to write the file, but provide patch points
-	FILE *out_f = fopen(out_file, "w");
-	if ( out_f == NULL ) {
-		fprintf(stderr, "Could not open destination file: %s\n", strerror(errno));
-		return -1;
-	}
-
-	diffstate_t *iter;
-	for ( iter = states_head; iter; iter = iter->next ) {
-		if ( iter->size ) {
-			int i = 0;
-			fprintf(out_f, "hex %lx ", iter->pos);
-			while( i < iter->size)
-				fprintf(out_f, "%02x", iter->after[i++]);
-			fputc('\n', out_f);
-		}
-	}
-
+	*diffs = states_head;
 	return 0;
 }
