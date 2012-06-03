@@ -26,7 +26,7 @@ cor - place a corrupt byte in the space (something like 0xAA for an opcode will 
 scr - scramble byte or range in the space with pseudo-cryptographic data (normally used to hide the original code or destroy it)
 
 rl - reverses the logic at a specified offset or offsets (meaning jumps have their conditions toggled).
-	
+	d
 ret - Place a return opcode (0xC3 on intel archs) in the byte(s) specified. 
 
 Raw Data Handling Commands (really experimental ideas):
