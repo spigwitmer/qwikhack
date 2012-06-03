@@ -41,27 +41,31 @@ int generate_patch_data(char *orig_file,
 {
 	struct stat st_orig, st_ptch;
 
-	int fd_orig = open(orig_file, O_RDONLY);
-	if ( fd_orig < 0 ) {
+	FILE *fd_orig = fopen(orig_file, "r");
+	if ( fd_orig == NULL ) {
 		fprintf(stderr, "could not open orig file: %s\n", strerror(errno));
 		return -1;
 	}
-	int fd_ptch = open(patched_file, O_RDONLY);
-	if ( fd_ptch < 0 ) {
+	FILE *fd_ptch = fopen(patched_file, "r");
+	if ( fd_ptch == NULL ) {
+		fclose(fd_orig);
 		fprintf(stderr, "could not open patched file: %s\n", strerror(errno));
 		return -1;
 	}
 
-	if ( fstat(fd_orig, &st_orig) != 0 ) {
+	if ( fstat(fileno(fd_orig), &st_orig) != 0 ) {
+		fclose(fd_orig); fclose(fd_ptch);
 		fprintf(stderr, "could not stat orig file: %s\n", strerror(errno));
 		return -1;
 	}
-	if ( fstat(fd_ptch, &st_ptch) != 0 ) {
+	if ( fstat(fileno(fd_ptch), &st_ptch) != 0 ) {
+		fclose(fd_orig); fclose(fd_ptch);
 		fprintf(stderr, "could not stat patched file: %s\n", strerror(errno));
 		return -1;
 	}
 
 	if ( st_orig.st_size != st_ptch.st_size ) {
+		fclose(fd_orig); fclose(fd_ptch);
 		fprintf(stderr, "Orig and patched files are different size\n");
 		return -1;
 	}
@@ -78,9 +82,10 @@ int generate_patch_data(char *orig_file,
 
 		buf_orig = (char*)malloc(sizeof(char)*st_orig.st_size);
 		buf_ptch = (char*)malloc(sizeof(char)*st_orig.st_size);
-
-		read(fd_orig, buf_orig, st_orig.st_size);
-		read(fd_ptch, buf_ptch, st_orig.st_size);
+		fread(buf_orig, 1, st_orig.st_size, fd_orig);
+		fread(buf_ptch, 1, st_orig.st_size, fd_ptch);
+		fclose(fd_orig);
+		fclose(fd_ptch);
 
 		for( total = 0; total < st_orig.st_size; total++ ) {
 			if ( buf_orig[total] != buf_ptch[total] ) {
@@ -101,6 +106,8 @@ int generate_patch_data(char *orig_file,
 		free(buf_ptch);
 	}
 	
+	// TODO: the file writing really needs to be somewhere outside the engine.
+	//  Its purpose is not to write the file, but provide patch points
 	FILE *out_f = fopen(out_file, "w");
 	if ( out_f == NULL ) {
 		fprintf(stderr, "Could not open destination file: %s\n", strerror(errno));
@@ -112,9 +119,8 @@ int generate_patch_data(char *orig_file,
 		if ( iter->size ) {
 			int i = 0;
 			fprintf(out_f, "hex %lx ", iter->pos);
-			for(i; i < iter->size; ++i) {
-				fprintf(out_f, "%02x", iter->after[i]);
-			}
+			while( i < iter->size)
+				fprintf(out_f, "%02x", iter->after[i++]);
 			fputc('\n', out_f);
 		}
 	}
